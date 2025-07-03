@@ -1,6 +1,6 @@
-# panehop
+# tmux-panehop
 
-![panehop](https://img.shields.io/badge/panehop-blue.svg)
+![panehop](https://img.shields.io/badge/tmux-panehop-blue.svg)
 
 ## Overview
 
@@ -32,7 +32,7 @@
 
 1. Add to your `~/.tmux.conf`:
    ```tmux
-   set -g @plugin 'yourname/panehop'
+   set -g @plugin 'yourname/tmux-panehop'
    run '~/.tmux/plugins/tpm/tpm'
    ```
 2. Reload tmux configuration:
@@ -47,12 +47,12 @@
 ### Manual
 
 ```bash
-git clone https://github.com/yourname/panehop.git ~/.tmux/plugins/panehop
+git clone https://github.com/yourname/tmux-panehop.git ~/.tmux/plugins/panehop
 ```
 
 Add to your `~/.tmux.conf`:
 ```tmux
-run-shell "~/.tmux/plugins/panehop/panehop.tmux"
+run-shell "~/.tmux/plugins/tmux-panehop/tmux-panehop.tmux"
 ```
 
 Reload tmux or restart your session.
