@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# Zoxide-powered session creator
+# Creates or switches to session based on selected directory
+
+# Get directory from zoxide
+selected_path=$(zoxide query -i)
+
+if [[ -z "$selected_path" ]]; then
+    echo "No directory selected"
+    exit 1
+fi
+
+# Extract basename for session name
+session_name=$(basename "$selected_path")
+
+# Check if session already exists
+if tmux has-session -t "$session_name" 2>/dev/null; then
+    # Session exists, switch to it
+    tmux switch-client -t "$session_name"
+    echo "Switched to existing session: $session_name"
+else
+    # Create new session
+    tmux new-session -d -s "$session_name" -c "$selected_path"
+    tmux switch-client -t "$session_name"
+    echo "Created new session: $session_name at $selected_path"
+fi

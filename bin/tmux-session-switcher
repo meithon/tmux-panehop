@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+# Session switcher with Command+Tab style popup display
+# Supports next/previous navigation with status-right overlay (no focus steal)
+
+POPUP_ID="tmux-session-switcher-popup"
+TEMP_DIR="/tmp/tmux-session-switcher"
+CURRENT_SESSION_FILE="$TEMP_DIR/current_session"
+SESSION_LIST_FILE="$TEMP_DIR/session_list"
+POPUP_TIMER_PID_FILE="$TEMP_DIR/popup_timer_pid"
+
+# Resolve script directory to source sibling widget reliably
+SCRIPT_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WIDGET_PATH="$SCRIPT_DIR/tmux-session-widget"
+
+# Widget display mode: list (default) or dots (flag)
+WIDGET_MODE="dots"
+
+# Create temp directory
+mkdir -p "$TEMP_DIR"
+
+# Function to get current session index
+get_current_session_index() {
+  local current_session=$(tmux display-message -p '#S')
+  local sessions=($(tmux list-sessions -F '#S' | sort))
+
+  for i in "${!sessions[@]}"; do
+    if [[ "${sessions[$i]}" == "$current_session" ]]; then
+      echo $i
+      return
+    fi
+  done
+  echo 0
+}
+
+# Function to get session at index (with wrap)
+get_session_at_index() {
+  local index=$1
+  local sessions=($(tmux list-sessions -F '#S' | sort))
+  local total=${#sessions[@]}
+
+  if [[ $index -lt 0 ]]; then
+    index=$((total - 1))
+  elif [[ $index -ge $total ]]; then
+    index=0
+  fi
+
+  echo "${sessions[$index]}"
+}
+
+# Function to create session list display using shared widget
+create_session_list_display() {
+  local current_index=$1
+
+  if [[ -f "$WIDGET_PATH" ]]; then
+    source "$WIDGET_PATH"
+  else
+    echo "tmux-session-widget not found at $WIDGET_PATH" >&2
+    return 1
+  fi
+
+  # choose mode: list (default) or dots
+  case "$WIDGET_MODE" in
+  dots)
+    get_session_info dots "$current_index"
+    ;;
+  *)
+    create_session_list "$current_index"
+    ;;
+  esac
+}
+
+# Function to show popup (status-right overlay)
+show_popup() {
+  local current_index=$1
+  local session_list
+  session_list=$(create_session_list_display "$current_index") || return
+
+  local display_text
+  display_text=$(echo -e "$session_list" | tr '\n' '|' | sed 's/||*/|/g; s/^|//; s/|$//; s/|/ | /g')
+
+  local original_status
+  original_status=$(tmux show-option -gqv status-right)
+
+  tmux set-option -g status-right "#[fg=#f38ba8,bg=default]◆ #[fg=#cdd6f4,bg=#313244]$display_text#[fg=#313244,bg=default] #{E:@catppuccin_status_date_time}" \;
+  run-shell "sleep 0.8; tmux set-option -g status-right $(printf %q \"$original_status\")" &
+}
+
+# Function to hide popup after delay (kept for compatibility; currently not used)
+hide_popup_after_delay() {
+  if [[ -f "$POPUP_TIMER_PID_FILE" ]]; then
+    local old_pid=$(cat "$POPUP_TIMER_PID_FILE")
+    kill "$old_pid" 2>/dev/null
+    rm -f "$POPUP_TIMER_PID_FILE"
+  fi
+}
+
+# Main logic
+case "$1" in
+"next")
+  current_index=$(get_current_session_index)
+  sessions=($(tmux list-sessions -F '#S' | sort))
+  total=${#sessions[@]}
+  new_index=$(((current_index + 1) % total))
+  target_session=$(get_session_at_index $new_index)
+
+  tmux switch-client -t "$target_session" \; refresh-client -S
+  show_popup $new_index
+  hide_popup_after_delay
+  ;;
+"prev")
+  current_index=$(get_current_session_index)
+  sessions=($(tmux list-sessions -F '#S' | sort))
+  total=${#sessions[@]}
+  new_index=$(((current_index - 1 + total) % total))
+  target_session=$(get_session_at_index $new_index)
+
+  tmux switch-client -t "$target_session" \; refresh-client -S
+  show_popup $new_index
+  hide_popup_after_delay
+  ;;
+*)
+  echo "Usage: $0 {next|prev}"
+  exit 1
+  ;;
+esac
