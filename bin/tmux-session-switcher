@@ -44,29 +44,6 @@ get_session_at_index() {
   echo "${sessions[$idx]}"
 }
 
-create_session_list_display() {
-  local current_index=$1
-  if [[ ! -f "$WIDGET_PATH" ]]; then
-    echo "tmux-session-widget not found: $WIDGET_PATH" >&2
-    return 1
-  fi
-  # shellcheck source=/dev/null
-  source "$WIDGET_PATH"
-  case "$WIDGET_MODE" in
-  dots)
-    get_session_info dots 0 # dots は内部で現在セッションを取得する
-    ;;
-  *)
-    create_session_list "$current_index"
-    ;;
-  esac
-}
-
-show_overlay() {
-  local current_index=$1
-  create_session_list_display "$current_index"
-}
-
 # --- Main ---
 case "$1" in
 next)
@@ -76,7 +53,6 @@ next)
   new_idx=$(((cur + 1) % total))
   target=$(get_session_at_index "$new_idx")
   tmux switch-client -t "$target" \; refresh-client -S
-  show_overlay "$new_idx"
   ;;
 prev)
   cur=$(get_current_session_index)
@@ -85,7 +61,6 @@ prev)
   new_idx=$(((cur - 1 + total) % total))
   target=$(get_session_at_index "$new_idx")
   tmux switch-client -t "$target" \; refresh-client -S
-  show_overlay "$new_idx"
   ;;
 *)
   echo "Usage: $0 {next|prev}" >&2
