@@ -32,8 +32,8 @@
 
 1. Add to your `~/.tmux.conf`:
    ```tmux
-   set -g @plugin 'yourname/tmux-panehop'
-   run '~/.tmux/plugins/tpm/tpm'
+set -g @plugin 'yourname/tmux-panehop'
+run '~/.tmux/plugins/tpm/tpm'
    ```
 2. Reload tmux configuration:
    ```
@@ -56,6 +56,52 @@ run-shell "~/.tmux/plugins/tmux-panehop/tmux-panehop.tmux"
 ```
 
 Reload tmux or restart your session.
+
+## tmux-session-switcher（このリポの別ツール）
+
+### インストール（ローカル配置）
+
+```bash
+make install            # デフォルト: ~/.local/bin へインストール
+# PREFIX を変えたい場合
+make install PREFIX=/usr/local
+```
+
+アンインストール:
+
+```bash
+make uninstall          # 同じ PREFIX を指定すると確実です
+```
+
+### tmux への組み込み（TPM/plugin）
+
+`~/.tmux.conf` に追記:
+
+```tmux
+set -g @plugin 'yourname/tmux-session-popup'
+run '~/.tmux/plugins/tpm/tpm'
+
+# オプション（必要に応じて）
+set -g @session_widget_path ~/.tmux/plugins/tmux-session-popup/bin/tmux-session-widget
+set -g @session_switcher_widget_mode list  # または dots
+set -g @session_switcher_next_key C-Tab    # 好きなキーに変更可（例: F）
+set -g @session_switcher_prev_key C-S-Tab
+```
+
+TPM 以外で手動ロードする場合:
+
+```tmux
+run-shell "~/.tmux/plugins/tmux-session-popup/tmux-session-switcher.tmux"
+```
+
+### 直接バインドで試す（TPMなし）
+
+```tmux
+bind-key -n C-Tab    run-shell "WIDGET_MODE=dots ~/.local/bin/tmux-session-switcher next"
+bind-key -n C-S-Tab  run-shell "WIDGET_MODE=dots ~/.local/bin/tmux-session-switcher prev"
+```
+
+> `WIDGET_MODE` は `list`（デフォルト）か `dots` を指定できます。`TMUX_SESSION_WIDGET_PATH` を指定すれば別ウィジェットにも差し替え可。
 
 ## Usage
 

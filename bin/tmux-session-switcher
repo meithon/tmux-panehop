@@ -11,10 +11,25 @@ POPUP_TIMER_PID_FILE="$TEMP_DIR/popup_timer_pid"
 
 # Resolve script directory to source sibling widget reliably
 SCRIPT_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WIDGET_PATH="$SCRIPT_DIR/tmux-session-widget"
 
-# Widget display mode: list (default) or dots (flag)
-WIDGET_MODE="dots"
+# Widget path priority: env > tmux option > default (same dir)
+DEFAULT_WIDGET_PATH="$SCRIPT_DIR/tmux-session-widget"
+WIDGET_PATH="${TMUX_SESSION_WIDGET_PATH:-}"
+if [[ -z "$WIDGET_PATH" ]]; then
+  WIDGET_PATH=$(tmux show-option -gqv @session_widget_path)
+fi
+if [[ -z "$WIDGET_PATH" ]]; then
+  WIDGET_PATH="$DEFAULT_WIDGET_PATH"
+fi
+
+# Widget display mode: env > tmux option > default(list)
+DEFAULT_WIDGET_MODE="list"
+if [[ -z "${WIDGET_MODE:-}" ]]; then
+  WIDGET_MODE=$(tmux show-option -gqv @session_switcher_widget_mode)
+fi
+if [[ -z "$WIDGET_MODE" ]]; then
+  WIDGET_MODE="$DEFAULT_WIDGET_MODE"
+fi
 
 # Create temp directory
 mkdir -p "$TEMP_DIR"
